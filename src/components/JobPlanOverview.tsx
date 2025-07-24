@@ -4,49 +4,22 @@ import { Button } from '@/components/ui/button';
 import { Plus, Edit, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const JobPlanOverview = () => {
-  const jobPlans = [
-    {
-      id: 1,
-      title: 'Main Consultant Post',
-      hospital: 'Royal London Hospital',
-      sessions: 10,
-      dccSessions: 7.5,
-      spaSessions: 2.5,
-      status: 'Active',
-      lastUpdated: '2024-01-15',
-    },
-    {
-      id: 1,
-      title: 'Main Consultant Post',
-      hospital: 'Royal London Hospital',
-      sessions: 11,
-      dccSessions: 8.5,
-      spaSessions: 3.5,
-      status: 'Active',
-      lastUpdated: '2024-01-15',
-    },
-    {
-      id: 2,
-      title: 'Private Practice',
-      hospital: 'London Bridge Hospital',
-      sessions: 2,
-      dccSessions: 0,
-      spaSessions: 2,
-      status: 'Active',
-      lastUpdated: '2024-01-10',
-    },
-    {
-      id: 3,
-      title: 'Research Fellowship',
-      hospital: 'Imperial College',
-      sessions: 1,
-      dccSessions: 0,
-      spaSessions: 1,
-      status: 'Draft',
-      lastUpdated: '2024-01-08',
-    },
-  ];
+type JobPlan = {
+  id: number;
+  title: string;
+  hospital: string;
+  sessions: number;
+  dccSessions: number;
+  spaSessions: number;
+  status: string;
+  lastUpdated: string;
+};
+
+interface JobPlanOverviewProps {
+  jobPlans: JobPlan[];
+}
+
+const JobPlanOverview = ({ jobPlans }: JobPlanOverviewProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {

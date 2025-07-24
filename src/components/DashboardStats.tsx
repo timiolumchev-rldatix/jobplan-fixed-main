@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -13,8 +13,14 @@ import {
   InvokeAgentCommand,
 } from "@aws-sdk/client-bedrock-agent-runtime";
 import AnimatedChatBotButton from "./animated-chatbot-button/AnimatedChatBotButton";
+import { set } from "date-fns";
 
-const DashboardStats = () => {
+import type { Dispatch, SetStateAction } from "react";
+interface DashboardStatsProps {
+  setJobPlans?: Dispatch<SetStateAction<any[]>>;
+}
+
+const DashboardStats = ({ setJobPlans }: DashboardStatsProps) => {
   const [chatOpen, setChatOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([
@@ -35,6 +41,7 @@ const DashboardStats = () => {
   });
 
   // Replace with your actual Bedrock agent endpoint and headers
+  const [isActionActive, setIsActionActive] = useState(false);
   async function getBedrockResponse(userInput) {
     try {
       const command = new InvokeAgentCommand({
@@ -57,7 +64,7 @@ const DashboardStats = () => {
     }
   }
 
-  const [sentimentType, setSentimentType] = useState(null);
+  const [sentimentType, setSentimentType] = useState("Neutral");
 
   const checkUserMessageSentiment = async (userInput) => {
     const postData = {
@@ -80,10 +87,9 @@ const DashboardStats = () => {
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-
       const result = await response.json();
+      console.log("result", result);
       setSentimentType(result.sentiment);
-      // console.log("Result:", result.sentiment);
     } catch (error) {
       console.error("Error:", error.message);
     }
@@ -91,7 +97,7 @@ const DashboardStats = () => {
   };
 
   const [iconColor, setIconColor] = useState("#3b82f6");
-  const setChatIcon = () => {
+  const setChatIcon = useCallback(() => {
     switch (sentimentType) {
       case "Positive":
         setIconColor("#55e41cff");
@@ -102,36 +108,18 @@ const DashboardStats = () => {
       case "Neutral":
         setIconColor("#3b82f6");
         break;
-        break;
       case "Unclear":
         setIconColor("#7a7c80ff");
         break;
       default:
         setIconColor("#3b82f6");
     }
-  };
+  }, [sentimentType]);
 
-  // async function getSentimentAnalysisAgentResponse(userInput) {
-  //   try {
-  //     const command = new InvokeAgentCommand({
-  //       inputText: userInput,
-  //       agentId: "4RBHCDFK0C",
-  //       agentAliasId: "RHMDCZY2Z2",
-  //       sessionId: crypto.randomUUID(),
-  //     });
-
-  //     const response = await bedrockClient.send(command);
-  //     let fullResponse = "";
-
-  //     for await (const chunk of response.completion) {
-  //       const textChunk = new TextDecoder("utf-8").decode(chunk.chunk?.bytes);
-  //       fullResponse += textChunk;
-  //     }
-  //     return fullResponse || "Sorry, no response from agent.";
-  //   } catch (err) {
-  //     return "Error contacting agent.";
-  //   }
-  // }
+  useEffect(() => {
+    console.log("sentimentReply", sentimentType);
+    setChatIcon();
+  }, [sentimentType, setChatIcon]);
 
   const chatEndRef = useRef(null);
 
@@ -140,6 +128,7 @@ const DashboardStats = () => {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
   const stats = [
     {
       title: "Total Sessions This Week",
@@ -175,6 +164,32 @@ const DashboardStats = () => {
     },
   ];
 
+  // jobPlans state is now lifted to parent
+
+  const checkForJobPlanAction = async () => {
+    try {
+      const response = await fetch(
+        "https://cp5zcej6rk.execute-api.eu-west-2.amazonaws.com/prod/add-job",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const result = await response.json();
+      console.log("result", result);
+      // Add the new job plan to the state array
+      setJobPlans((prev) => [...prev, result.jobPlan]);
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -207,7 +222,6 @@ const DashboardStats = () => {
           >
             <AnimatedChatBotButton />
           </button>
-          
         ) : (
           <div
             className="h-full w-[28rem] bg-white rounded-l-xl shadow-2xl p-6 flex flex-col animate-fade-in"
@@ -290,37 +304,62 @@ const DashboardStats = () => {
             </div>
             <form
               className="flex gap-2 pt-2 border-t border-gray-200"
+              style={{ flexDirection: "column" }}
               onSubmit={async (e) => {
                 e.preventDefault();
+
                 if (!inputValue.trim()) return;
+
                 const userMsg = { sender: "user", text: inputValue };
-                setMessages((prev) => [...prev, userMsg]);
-                setInputValue(""); // Clear input immediately
+
                 setLoading(true);
-                const botReply = await getBedrockResponse(userMsg.text);
-                checkUserMessageSentiment(userMsg.text);
-                setMessages((prev) => [
-                  ...prev,
-                  { sender: "bot", text: botReply },
-                ]);
+                setMessages((prev) => [...prev, userMsg]);
+                setInputValue("");
+
+                if (isActionActive) {
+                  checkForJobPlanAction();
+                  setMessages((prev) => [
+                    ...prev,
+                    { sender: "bot", text: "Job plan added successfully!" },
+                  ]);
+                } else {
+                  const botReply = await getBedrockResponse(userMsg.text);
+                  checkUserMessageSentiment(userMsg.text);
+                  setMessages((prev) => [
+                    ...prev,
+                    { sender: "bot", text: botReply },
+                  ]);
+                  setChatIcon();
+                }
+
                 setLoading(false);
-                setChatIcon();
               }}
             >
-              <input
-                type="text"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="Type your question..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-700 transition-colors"
-                disabled={loading}
-              >
-                {loading ? "..." : "Send"}
-              </button>
+              <div className="flex gap-2">
+                <label>AI Actions</label>
+                <input
+                  type="checkbox"
+                  checked={isActionActive}
+                  onChange={() => setIsActionActive(!isActionActive)}
+                  placeholder=""
+                />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  placeholder="Type your question..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-700 transition-colors"
+                  disabled={loading}
+                >
+                  {loading ? "..." : "Send"}
+                </button>
+              </div>
             </form>
           </div>
         )}
