@@ -13,6 +13,7 @@ import {
   InvokeAgentCommand,
 } from "@aws-sdk/client-bedrock-agent-runtime";
 import AnimatedChatBotButton from "./animated-chatbot-button/AnimatedChatBotButton";
+import ChatIcon from "./ChatIcon";
 import { set } from "date-fns";
 
 import type { Dispatch, SetStateAction } from "react";
@@ -96,30 +97,30 @@ const DashboardStats = ({ setJobPlans }: DashboardStatsProps) => {
     console.log("sentimentReply", sentimentType);
   };
 
-  const [iconColor, setIconColor] = useState("#3b82f6");
-  const setChatIcon = useCallback(() => {
-    switch (sentimentType) {
-      case "Positive":
-        setIconColor("#55e41cff");
-        break;
-      case "Negative":
-        setIconColor("#f87171");
-        break;
-      case "Neutral":
-        setIconColor("#3b82f6");
-        break;
-      case "Unclear":
-        setIconColor("#7a7c80ff");
-        break;
-      default:
-        setIconColor("#3b82f6");
-    }
-  }, [sentimentType]);
+  // const [iconColor, setIconColor] = useState("#3b82f6");
+  // const setChatIcon = useCallback(() => {
+  //   switch (sentimentType) {
+  //     case "Positive":
+  //       setIconColor("#55e41cff");
+  //       break;
+  //     case "Negative":
+  //       setIconColor("#f87171");
+  //       break;
+  //     case "Neutral":
+  //       setIconColor("#3b82f6");
+  //       break;
+  //     case "Unclear":
+  //       setIconColor("#7a7c80ff");
+  //       break;
+  //     default:
+  //       setIconColor("#3b82f6");
+  //   }
+  // }, [sentimentType]);
 
-  useEffect(() => {
-    console.log("sentimentReply", sentimentType);
-    setChatIcon();
-  }, [sentimentType, setChatIcon]);
+  // useEffect(() => {
+  //   console.log("sentimentReply", sentimentType);
+  //   setChatIcon();
+  // }, [sentimentType, setChatIcon]);
 
   const chatEndRef = useRef(null);
 
@@ -222,6 +223,7 @@ const DashboardStats = ({ setJobPlans }: DashboardStatsProps) => {
           >
             <AnimatedChatBotButton />
           </button>
+
         ) : (
           <div
             className="h-full w-[28rem] bg-white rounded-l-xl shadow-2xl p-6 flex flex-col animate-fade-in"
@@ -230,28 +232,10 @@ const DashboardStats = ({ setJobPlans }: DashboardStatsProps) => {
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center gap-2">
                 {/* Animated Bot SVG */}
-                <span className="relative flex h-6 w-6">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="animate-bounce"
-                  >
-                    <circle cx="12" cy="12" r="10" fill={iconColor} />
-                    <ellipse cx="12" cy="15" rx="5" ry="2" fill="#2563EB" />
-                    <circle cx="9" cy="11" r="1.5" fill="white" />
-                    <circle cx="15" cy="11" r="1.5" fill="white" />
-                    <rect
-                      x="10"
-                      y="16"
-                      width="4"
-                      height="1"
-                      rx="0.5"
-                      fill="white"
-                    />
-                  </svg>
+                <span className="relative flex h-6 w-8">
+                  <div className="animate-bounce">
+                    <ChatIcon sentimentType={sentimentType} />
+                  </div>
                 </span>
                 <span className="font-semibold text-blue-600">Chatbot</span>
                 {loading && (
@@ -280,16 +264,14 @@ const DashboardStats = ({ setJobPlans }: DashboardStatsProps) => {
                 {messages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`flex ${
-                      msg.sender === "user" ? "justify-end" : "justify-start"
-                    }`}
+                    className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"
+                      }`}
                   >
                     <div
-                      className={`px-3 py-2 rounded-lg text-sm max-w-[70%] ${
-                        msg.sender === "user"
+                      className={`px-3 py-2 rounded-lg text-sm max-w-[70%] ${msg.sender === "user"
                           ? "bg-blue-100 text-blue-900"
                           : "bg-gray-100 text-gray-700"
-                      }`}
+                        }`}
                     >
                       {msg.sender === "bot" ? (
                         <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -329,7 +311,7 @@ const DashboardStats = ({ setJobPlans }: DashboardStatsProps) => {
                     ...prev,
                     { sender: "bot", text: botReply },
                   ]);
-                  setChatIcon();
+                  // setChatIcon();
                 }
 
                 setLoading(false);
