@@ -27,7 +27,7 @@ const DashboardStats = ({ setJobPlans }: DashboardStatsProps) => {
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Hi Dr.Smith! I'm your job plan assistant. How can I help you today?",
+      text: "Hi Dr. Smith! I'm your job plan assistant. How can I help you today?",
     },
   ]);
   const [loading, setLoading] = useState(false);
